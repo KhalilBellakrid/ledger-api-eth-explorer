@@ -1,1 +1,1 @@
-## Node.js implementation of explorers
+## Node.js implementation of Ledger-like explorers using external providers

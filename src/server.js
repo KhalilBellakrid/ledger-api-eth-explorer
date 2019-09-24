@@ -45,6 +45,7 @@ function endpoint<In, Out>(validateInput: mixed => In, f: In => Promise<Out>) {
 var app = express();
 
 app.use(cors());
+app.use(bodyParser.json());
 
 app.get("/blocks/current", (req: *, res: *) => {
   provider.getCurrentBlock()
@@ -71,6 +72,86 @@ app.get("/fees", (req: *, res: *) => {
     res.status(200).send({
       gas_price: gasPrice,
     });
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
+      }
+    ]);
+  });
+});
+
+app.get("/addresses/:address/nonce", (req: *, res: *) => {
+  provider.getAccountNonce(req.params.address)
+  .then(nonce => {
+    res.status(200).send({ nonce });
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
+      }
+    ]);
+  });
+});
+
+app.get("/addresses/:address/balance", (req: *, res: *) => {
+  provider.getAccountBalance(req.params.address)
+  .then(balance => {
+    res.status(200).send({ balance });
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
+      }
+    ]);
+  });
+});
+
+app.post("/erc20/balance", (req: *, res: *) => {
+  provider.getAccountTokenBalance(req.body.address, req.body.contract)
+  .then(balance => {
+    res.status(200).send({ balance });
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
+      }
+    ]);
+  });
+});
+
+app.post("/addresses/:address/estimate-gas-limit", (req: *, res: *) => {
+  provider.getEstimatedGasLimit(req.params.address, req.body.to, req.body.input)
+  .then(gasEstimation => {
+    res.status(200).send({ estimated_gas_limit: gasEstimation });
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
+      }
+    ]);
+  });
+});
+
+app.get("/addresses/:address/transactions", (req: *, res: *) => {
+  provider.getAccountTransactions(req.params.address)
+  .then(txs => {
+    res.status(200).send({ txs });
   })
   .catch(error => {
     logEndpointError(req, error);

@@ -64,11 +64,11 @@ const getAccountBalance = async (accountAddress: string) => {
   const r = await get("", {
     params: {
       module: "account",
-      action: "balance",
+      action: "eth_get_balance",
       address: accountAddress
     }
   });
-  return r.result;
+  return BigInt(r.result).toString();
 };
 
 const getAccountTokenBalance = async (
@@ -83,7 +83,7 @@ const getAccountTokenBalance = async (
       address: accountAddress
     }
   });
-  return r.result;
+  return BigInt(r.result).toString();
 };
 
 const getAccountTransactions = async (accountAddress: string) => {
@@ -140,7 +140,6 @@ const getAccountTransactions = async (accountAddress: string) => {
     );
     txs[indexOfParentTx] = parentTx;
   });
-
 
   // Finally we get the internal transactions
   const internalTxs = (await get("", {
@@ -211,7 +210,8 @@ const getTransactionByHash = async (txHash: string) => {
 
 const getAccountNonce = async (accountAddress: string) => {
   //Not implemented by blockscout
-  return getMethodFromRPC("eth_getTransactionCount", accountAddress);
+  const hexNonce = await getMethodFromRPC("eth_getTransactionCount", [accountAddress, "latest"]);
+  return BigInt(hexNonce).toString();
 };
 
 const getGasPrice = async () => {
@@ -226,7 +226,8 @@ const getEstimatedGasLimit = async (
   input: string
 ) => {
   //Not implemented by blockscout
-  return getMethodFromRPC("eth_estimateGas",[from, to, input]);
+  const hexGasEstimation = await getMethodFromRPC("eth_estimateGas",[{from, to, data: input}]);
+  return BigInt(hexGasEstimation).toString();
 };
 
 const pushRawTransaction = async (rawTx: string) => {
