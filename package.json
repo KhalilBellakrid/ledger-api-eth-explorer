@@ -1,0 +1,41 @@
+{
+  "scripts": {
+    "start": "TZ=utc node lib/server.js",
+    "start-sync": "TZ=utc node lib/sync.js",
+    "watch": "babel -w -d lib src",
+    "build": "babel -d lib src",
+    "postinstall": "yarn build",
+    "flow": "flow src",
+    "flow-typed": "flow-typed install -s"
+  },
+  "name": "ledger-api-countervalue-nodejs",
+  "version": "1.9.3",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.19.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.6",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "mongodb": "^3.1.4",
+    "rxjs": "^6.5.2",
+    "rxjs-compat": "^6.5.2",
+    "socket.io-client": "^2.1.1",
+    "winston": "^2.4.2",
+    "ws": "^6.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-prettier": "^3.0.1",
+    "eslint-plugin-flowtype": "^2.50.0",
+    "flow-bin": "~0.104.0",
+    "flow-typed": "^2.5.2"
+  }
+}
