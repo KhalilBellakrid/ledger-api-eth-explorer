@@ -1,8 +1,6 @@
 // @flow
 
 import blockscout from "./blockscout";
-
-
 import type { Provider } from "../types";
 
 export const providers: { [_: string]: Provider } = {

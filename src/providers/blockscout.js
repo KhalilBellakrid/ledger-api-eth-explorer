@@ -1,7 +1,5 @@
 //@flow
 
-import { Observable } from "rxjs";
-import io from "socket.io-client";
 import axios from "axios";
 import { logAPI, logAPIError } from "../logger";
 import type from "../types";
@@ -20,7 +18,9 @@ function init() {
 const get = async (url: string, opts?: *) => {
   const beforeTime = Date.now();
   try {
-    const res = await axios.get(`https://blockscout.com/eth/mainnet/api/${url}`, {
+    const blockscoutUrl = `https://blockscout.com/eth/mainnet/api`;
+    const baseUrl = url.length > 0 ? `${blockscoutUrl}/${url}` : blockscoutUrl;
+    const res = await axios.get(baseUrl, {
       timeout: 60000,
       headers: {
         "content-type": "application/json"
@@ -127,18 +127,29 @@ const getAccountTransactions = async (accountAddress: string) => {
   })).result;
 
   // Update transactions with transfer events
-  ERC20Txs.map(erc20Tx => {
+  ERC20Txs.map(async erc20Tx => {
     const parentTx = txs.find(tx => tx.hash === erc20Tx.hash);
     const indexOfParentTx = txs.indexOf(parentTx);
-    parentTx.ERC20Transactions.push(
-      {
-        from: erc20Tx.from,
-        to: erc20Tx.to,
-        contractAddress: erc20Tx.contractAddress,
-        value: erc20Tx.value
+
+    const getERC20Tx = iTx => {
+      return {
+        from: iTx.from,
+        to: iTx.to,
+        contractAddress: iTx.contractAddress,
+        value: iTx.value
       }
-    );
-    txs[indexOfParentTx] = parentTx;
+    };
+
+    if (!!parentTx) {
+      parentTx.ERC20Transactions.push(getERC20Tx(erc20Tx));
+      txs[indexOfParentTx] = parentTx;
+    } else {
+      // Otherwise we need to fetch the parent tx
+      const newTx = await getTransactionByHash(erc20Tx.hash);
+      newTx.internalTransactions.push(getERC20Tx(erc20Tx));
+      // Add new tx to list of txs
+      txs.push(newTx);
+    }
   });
 
   // Finally we get the internal transactions
@@ -151,9 +162,10 @@ const getAccountTransactions = async (accountAddress: string) => {
   })).result;
 
   // Update transactions with internal transactions
-  internalTxs.map(internalTx => {
-    const parentTx = txs.find(tx => tx.hash === internalTx.hash);
+  internalTxs.map(async internalTx => {
+    const parentTx = txs.find(tx => tx.hash === internalTx.transactionHash);
     const indexOfParentTx = txs.indexOf(parentTx);
+
     // If accountAddress appears (from or to) in tx
     const getInternalTx = iTx => {
       return {
@@ -164,13 +176,14 @@ const getAccountTransactions = async (accountAddress: string) => {
         gasUsed: iTx.gasUsed,
         input: iTx.input,
       }
-    }
+    };
+
     if (!!parentTx) {
       parentTx.internalTransactions.push(getInternalTx(internalTx));
       txs[indexOfParentTx] = parentTx;
     } else {
       // Otherwise we need to fetch the parent tx
-      const newTx = getTransactionByHash(internalTx.hash);
+      const newTx = await getTransactionByHash(internalTx.transactionHash);
       newTx.internalTransactions.push(getInternalTx(internalTx));
       // Add new tx to list of txs
       txs.push(newTx);
@@ -180,29 +193,40 @@ const getAccountTransactions = async (accountAddress: string) => {
 };
 
 const getTransactionByHash = async (txHash: string) => {
-  const tx = (await get("", {
+  const rTx = (await get("", {
     params: {
       module: "transaction",
       action: "gettxinfo",
       txhash: txHash
     }
-  })).result;
+  }));
+
+  const tx = rTx.result;
+  // If a field is missing then call RPC
+  if (!!Object.keys(tx).filter(k => tx[k] === undefined)) {
+    const rpcTx = await getMethodFromRPC("eth_getTransactionByHash", [ txHash ]);
+    tx.gasPrice = rpcTx.gasPrice;
+    tx.nonce = rpcTx.nonce;
+    tx.blockHash = rpcTx.blockHash;
+  }
+
   return {
     hash: tx.hash,
     from: tx.from,
     to: tx.to,
     value: tx.value,
-    gasPrice: tx.gasPrice,
-    gasLimit: tx.gas,
+    gasPrice: tx.gasPrice, // Does not exist
+    gasLimit: tx.gasLimit || tx.gas,
     gasUsed: tx.gasUsed,
     nonce: tx.nonce,
     block: {
-      blockNumer: tx.blockNumer,
+      blockNumer: tx.blockNumber,
       blockHash: tx.blockHash
     },
     confirmations: tx.confirmations,
     input: tx.input,
-    status: tx.txreceipt_status,
+    status: parseInt(rTx.status),
+    timeStamp: (new Date(tx.timeStamp * 1000)).toISOString().replace('.000',''), //TODO: Is there a better way to get rid of ms ?
     ERC20Transactions: [],
     internalTransactions: []
   }
@@ -232,7 +256,7 @@ const getEstimatedGasLimit = async (
 
 const pushRawTransaction = async (rawTx: string) => {
   //Not implemented by blockscout
-  return getMethodFromRPC("eth_sendrawtransaction", rawTx);
+  return getMethodFromRPC("eth_sendRawTransaction", [rawTx]);
 };
 
 const provider: Provider = {

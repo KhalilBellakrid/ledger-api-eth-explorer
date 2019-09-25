@@ -34,6 +34,7 @@ export type Transaction = {|
   confirmations: string,
   input: string,
   status: number,
+  timeStamp: string,
   ERC20Transactions: Array<ERC20Tx>,
   internalTransactions: Array<InternalTx>
 |};

@@ -148,10 +148,63 @@ app.post("/addresses/:address/estimate-gas-limit", (req: *, res: *) => {
   });
 });
 
+const formatTransaction = tx => {
+  const transferEvents = tx.ERC20Transactions.map(erc20Tx => {
+    return {
+      contract: erc20Tx.contractAddress,
+      from: erc20Tx.from,
+      to: erc20Tx.to,
+      count: erc20Tx.value
+    }
+  });
+
+  const internalTxs = tx.internalTransactions.map(internalTx => {
+    return {
+      from: internalTx.from,
+      to: internalTx.to,
+      value: internalTx.value,
+      gas: internalTx.gasPrice,
+      gas_used: internalTx.gasUsed
+    }
+  });
+
+  const {
+    hash,
+    from,
+    to,
+    nonce,
+    status,
+    input,
+    value,
+    confirmations
+  } = tx;
+
+  return {
+    hash,
+    from,
+    to,
+    nonce,
+    status,
+    input,
+    value,
+    confirmations,
+    gas_price: tx.gasPrice,
+    gas_used: tx.gasUsed,
+    gas: tx.gasLimit,
+    received_at: tx.timeStamp,
+    block: tx.block,
+    transfer_events: {
+      list: transferEvents
+    },
+    actions: internalTxs
+  };
+};
+
 app.get("/addresses/:address/transactions", (req: *, res: *) => {
   provider.getAccountTransactions(req.params.address)
   .then(txs => {
-    res.status(200).send({ txs });
+    const formattedTxs = txs.map(formatTransaction);
+    res.status(200).send(formattedTxs);
   })
   .catch(error => {
     logEndpointError(req, error);
@@ -167,49 +220,24 @@ app.get("/addresses/:address/transactions", (req: *, res: *) => {
 app.get("/transactions/:hash", (req: *, res: *) => {
   provider.getTransactionByHash(req.params.hash)
   .then(tx => {
-    const transferEvents = tx.ERC20Transactions.map(erc20Tx => {
-      return {
-        contract: erc20Tx.contractAddress,
-        from: erc20Tx.from,
-        to: erc20Tx.to,
-        count: erc20Tx.value
+    const formattedTx = formatTransaction(tx);
+    res.status(200).send(formattedTx);
+  })
+  .catch(error => {
+    logEndpointError(req, error);
+    res.status(503).send([
+      {
+        status: "KO",
+        service: "provider"
       }
-    });
+    ]);
+  });
+});
 
-    const internalTxs = tx.internalTransactions.map(internalTx => {
-      return {
-        from: internalTx.from,
-        to: internalTx.to,
-        value: internalTx.value,
-        gas: internalTx.gasPrice,
-        gas_used: internalTx.gasUsed
-      }
-    });
-
-    const {
-      hash,
-      from,
-      to,
-      input,
-      value,
-      confirmations
-    } = tx;
-
-    res.status(200).send({
-      hash,
-      from,
-      to,
-      input,
-      value,
-      confirmations,
-      gas_price: tx.gasPrice,
-      gas_used: tx.gasUsed,
-      gas_limit: tx.gasLimit,
-      transfer_events: {
-        list: transferEvents
-      },
-      actions: internalTxs
-    });
+app.post("/transactions/send", (req: *, res: *) => {
+  provider.pushRawTransaction(req.body.tx)
+  .then(hash => {
+    res.status(200).send({ hash });
   })
   .catch(error => {
     logEndpointError(req, error);

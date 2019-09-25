@@ -8,8 +8,8 @@
     "flow": "flow src",
     "flow-typed": "flow-typed install -s"
   },
-  "name": "ledger-api-countervalue-nodejs",
-  "version": "1.9.3",
+  "name": "ledger-api-eth-explorer",
+  "version": "1.0.0",
   "license": "MIT",
   "private": true,
   "dependencies": {
@@ -23,13 +23,7 @@
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "lodash": "^4.17.15",
-    "mongodb": "^3.1.4",
-    "rxjs": "^6.5.2",
-    "rxjs-compat": "^6.5.2",
-    "socket.io-client": "^2.1.1",
-    "winston": "^2.4.2",
-    "ws": "^6.0.0"
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
