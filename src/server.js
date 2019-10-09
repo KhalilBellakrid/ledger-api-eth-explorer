@@ -18,6 +18,7 @@ import { version } from "../package.json";
 import { getCurrentProvider } from "./providers";
 import { promisify } from "./utils"
 
+const apiVersion = process.env.API_VERSION || "v3";
 const provider = getCurrentProvider();
 provider.init();
 
@@ -47,7 +48,15 @@ var app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-app.get("/blocks/current", (req: *, res: *) => {
+// Call just for compliance with Ledger's explorers
+app.get(`/blockchain/${apiVersion}/eth/syncToken`, (req: *, res: *) => {
+  res.status(200).send({token: ""});
+});
+app.delete(`/blockchain/${apiVersion}/eth/syncToken`, (req: *, res: *) => {
+  res.status(200).send({success: "OK"});
+});
+
+app.get(`/blockchain/${apiVersion}/eth/blocks/current`, (req: *, res: *) => {
   provider.getCurrentBlock()
   .then(block => {
     res.status(200).send({
@@ -66,7 +75,7 @@ app.get("/blocks/current", (req: *, res: *) => {
   });
 });
 
-app.get("/fees", (req: *, res: *) => {
+app.get(`/blockchain/${apiVersion}/eth/fees`, (req: *, res: *) => {
   provider.getGasPrice()
   .then(gasPrice => {
     res.status(200).send({
@@ -84,7 +93,7 @@ app.get("/fees", (req: *, res: *) => {
   });
 });
 
-app.get("/addresses/:address/nonce", (req: *, res: *) => {
+app.get(`/blockchain/${apiVersion}/eth/addresses/:address/nonce`, (req: *, res: *) => {
   provider.getAccountNonce(req.params.address)
   .then(nonce => {
     res.status(200).send({ nonce });
@@ -100,10 +109,10 @@ app.get("/addresses/:address/nonce", (req: *, res: *) => {
   });
 });
 
-app.get("/addresses/:address/balance", (req: *, res: *) => {
+app.get(`/blockchain/${apiVersion}/eth/addresses/:address/balance`, (req: *, res: *) => {
   provider.getAccountBalance(req.params.address)
   .then(balance => {
-    res.status(200).send({ balance });
+    res.status(200).send([{ balance }]);
   })
   .catch(error => {
     logEndpointError(req, error);
@@ -116,7 +125,7 @@ app.get("/addresses/:address/balance", (req: *, res: *) => {
   });
 });
 
-app.post("/erc20/balance", (req: *, res: *) => {
+app.post(`/blockchain/${apiVersion}/eth/erc20/balance`, (req: *, res: *) => {
   provider.getAccountTokenBalance(req.body.address, req.body.contract)
   .then(balance => {
     res.status(200).send({ balance });
@@ -132,7 +141,7 @@ app.post("/erc20/balance", (req: *, res: *) => {
   });
 });
 
-app.post("/addresses/:address/estimate-gas-limit", (req: *, res: *) => {
+app.post(`/blockchain/${apiVersion}/eth/addresses/:address/estimate-gas-limit`, (req: *, res: *) => {
   provider.getEstimatedGasLimit(req.params.address, req.body.to, req.body.input)
   .then(gasEstimation => {
     res.status(200).send({ estimated_gas_limit: gasEstimation });
@@ -200,11 +209,11 @@ const formatTransaction = tx => {
   };
 };
 
-app.get("/addresses/:address/transactions", (req: *, res: *) => {
+app.get(`/blockchain/${apiVersion}/eth/addresses/:address/transactions`, (req: *, res: *) => {
   provider.getAccountTransactions(req.params.address)
   .then(txs => {
     const formattedTxs = txs.map(formatTransaction);
-    res.status(200).send(formattedTxs);
+    res.status(200).send({truncated: false, txs: formattedTxs});
   })
   .catch(error => {
     logEndpointError(req, error);
@@ -217,7 +226,7 @@ app.get("/addresses/:address/transactions", (req: *, res: *) => {
   });
 });
 
-app.get("/transactions/:hash", (req: *, res: *) => {
+app.get(`/blockchain/${apiVersion}/eth/transactions/:hash`, (req: *, res: *) => {
   provider.getTransactionByHash(req.params.hash)
   .then(tx => {
     const formattedTx = formatTransaction(tx);
@@ -234,7 +243,7 @@ app.get("/transactions/:hash", (req: *, res: *) => {
   });
 });
 
-app.post("/transactions/send", (req: *, res: *) => {
+app.post(`/blockchain/${apiVersion}/eth/transactions/send`, (req: *, res: *) => {
   provider.pushRawTransaction(req.body.tx)
   .then(hash => {
     res.status(200).send({ hash });

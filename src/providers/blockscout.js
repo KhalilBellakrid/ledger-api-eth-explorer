@@ -100,18 +100,18 @@ const getAccountTransactions = async (accountAddress: string) => {
       hash: tx.hash,
       from: tx.from,
       to: tx.to,
-      value: tx.value,
-      gasPrice: tx.gasPrice,
-      gasLimit: tx.gas,
-      gasUsed: tx.gasUsed,
-      nonce: tx.nonce,
+      value: parseInt(tx.value),
+      gasPrice: parseInt(tx.gasPrice),
+      gasLimit: parseInt(tx.gas),
+      gasUsed: parseInt(tx.gasUsed),
+      nonce: parseInt(tx.nonce).toString(16),
       block: {
-        blockNumber: tx.blockNumber,
+        blockNumber: parseInt(tx.blockNumber),
         blockHash: tx.blockHash
       },
-      confirmations: tx.confirmations,
+      confirmations: parseInt(tx.confirmations),
       input: tx.input,
-      status: tx.txreceipt_status,
+      status: parseInt(tx.txreceipt_status),
       ERC20Transactions: [],
       internalTransactions: []
     }
@@ -136,7 +136,7 @@ const getAccountTransactions = async (accountAddress: string) => {
         from: iTx.from,
         to: iTx.to,
         contractAddress: iTx.contractAddress,
-        value: iTx.value
+        value: parseInt(iTx.value)
       }
     };
 
@@ -171,9 +171,9 @@ const getAccountTransactions = async (accountAddress: string) => {
       return {
         from: iTx.from,
         to: iTx.to,
-        value: iTx.value,
-        gasPrice: iTx.gas,
-        gasUsed: iTx.gasUsed,
+        value: parseInt(iTx.value),
+        gasPrice: parseInt(iTx.gas),
+        gasUsed: parseInt(iTx.gasUsed),
         input: iTx.input,
       }
     };
@@ -214,16 +214,16 @@ const getTransactionByHash = async (txHash: string) => {
     hash: tx.hash,
     from: tx.from,
     to: tx.to,
-    value: tx.value,
-    gasPrice: tx.gasPrice, // Does not exist
-    gasLimit: tx.gasLimit || tx.gas,
+    value: parseInt(tx.value),
+    gasPrice: parseInt(tx.gasPrice), // Does not exist
+    gasLimit: parseInt(tx.gasLimit) || parseInt(tx.gas),
     gasUsed: tx.gasUsed,
-    nonce: tx.nonce,
+    nonce: parseInt(tx.nonce).toString(16),
     block: {
-      blockNumer: tx.blockNumber,
+      blockNumer: parseInt(tx.blockNumber),
       blockHash: tx.blockHash
     },
-    confirmations: tx.confirmations,
+    confirmations: parseInt(tx.confirmations),
     input: tx.input,
     status: parseInt(rTx.status),
     timeStamp: (new Date(tx.timeStamp * 1000)).toISOString().replace('.000',''), //TODO: Is there a better way to get rid of ms ?
