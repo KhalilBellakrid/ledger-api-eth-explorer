@@ -96,7 +96,7 @@ app.get(`/blockchain/${apiVersion}/eth/fees`, (req: *, res: *) => {
 app.get(`/blockchain/${apiVersion}/eth/addresses/:address/nonce`, (req: *, res: *) => {
   provider.getAccountNonce(req.params.address)
   .then(nonce => {
-    res.status(200).send({ nonce });
+    res.status(200).send([{ nonce }]);
   })
   .catch(error => {
     logEndpointError(req, error);

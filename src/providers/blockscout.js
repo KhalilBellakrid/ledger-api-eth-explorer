@@ -113,7 +113,17 @@ const getAccountTransactions = async (accountAddress: string) => {
       input: tx.input,
       status: parseInt(tx.txreceipt_status),
       ERC20Transactions: [],
-      internalTransactions: []
+      internalTransactions: [
+        // respect same behaviour as our explorers
+        {
+          from: tx.from,
+          to: tx.to,
+          value: parseInt(tx.value),
+          gasPrice: parseInt(tx.gas),
+          gasUsed: parseInt(tx.gasUsed),
+          input: tx.input
+        }
+      ]
     }
   });
 
@@ -146,7 +156,7 @@ const getAccountTransactions = async (accountAddress: string) => {
     } else {
       // Otherwise we need to fetch the parent tx
       const newTx = await getTransactionByHash(erc20Tx.hash);
-      newTx.internalTransactions.push(getERC20Tx(erc20Tx));
+      newTx.ERC20Transactions.push(getERC20Tx(erc20Tx));
       // Add new tx to list of txs
       txs.push(newTx);
     }
@@ -173,18 +183,19 @@ const getAccountTransactions = async (accountAddress: string) => {
         to: iTx.to,
         value: parseInt(iTx.value),
         gasPrice: parseInt(iTx.gas),
-        gasUsed: parseInt(iTx.gasUsed),
+        gasUsed: parseInt(iTx.gasUsed) || 0, // Sometimes blockscout gives back empty field
         input: iTx.input,
       }
     };
 
+    const intTx = getInternalTx(internalTx);
     if (!!parentTx) {
-      parentTx.internalTransactions.push(getInternalTx(internalTx));
+      parentTx.internalTransactions.push(intTx);
       txs[indexOfParentTx] = parentTx;
     } else {
       // Otherwise we need to fetch the parent tx
       const newTx = await getTransactionByHash(internalTx.transactionHash);
-      newTx.internalTransactions.push(getInternalTx(internalTx));
+      newTx.internalTransactions.push(intTx);
       // Add new tx to list of txs
       txs.push(newTx);
     }
@@ -234,8 +245,8 @@ const getTransactionByHash = async (txHash: string) => {
 
 const getAccountNonce = async (accountAddress: string) => {
   //Not implemented by blockscout
-  const hexNonce = await getMethodFromRPC("eth_getTransactionCount", [accountAddress, "latest"]);
-  return BigInt(hexNonce).toString();
+  const nonce = await getMethodFromRPC("eth_getTransactionCount", [accountAddress, "latest"]);
+  return parseInt(BigInt(nonce).toString(10));
 };
 
 const getGasPrice = async () => {
