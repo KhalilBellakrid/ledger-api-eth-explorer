@@ -9,7 +9,7 @@ if (!LEDGER_RPC_NODE_ENDPOINT) {
 }
 const LEDGER_TOKEN = process.env.LEDGER_TOKEN;
 if (!LEDGER_TOKEN) {
-  throw new Error(`LEDGER_TOKEN env is required to use: ${LEDGER_RPC_NODE_ENDPOINT}`);
+  throw new Error(`LEDGER_TOKEN env is required to use: ${LEDGER_TOKEN}`);
 }
 
 const RPC_VERSION = process.env.RPC_VERSION || "2.0";

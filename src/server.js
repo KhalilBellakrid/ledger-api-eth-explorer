@@ -49,6 +49,10 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Call just for compliance with Ledger's explorers
+app.get(`/blockchain/${apiVersion}/explorer/_health`, (req: *, res: *) => {
+  res.status(200).send({status: 200});
+});
+
 app.get(`/blockchain/${apiVersion}/eth/syncToken`, (req: *, res: *) => {
   res.status(200).send({token: ""});
 });
