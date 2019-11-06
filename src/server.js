@@ -16,7 +16,6 @@ import type {
 import { logEndpointError, logError, logEndpointCall } from "./logger";
 import { version } from "../package.json";
 import { getCurrentProvider } from "./providers";
-import { promisify } from "./utils"
 
 const apiVersion = process.env.API_VERSION || "v3";
 const provider = getCurrentProvider();
